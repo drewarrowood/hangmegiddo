@@ -254,14 +254,22 @@ func _centroid(arr: Array) -> Vector3:
 
 func _order_group(own: Array, filter_kind: String, target: Vector3, attack_move: bool) -> void:
 	var i := 0
+	var world_ref = null
+	if own.size() > 0 and is_instance_valid(own[0]):
+		world_ref = own[0].get_parent()
+		while world_ref and not (world_ref is GameWorld):
+			world_ref = world_ref.get_parent()
 	for u in own:
 		if filter_kind != "all" and u.kind != filter_kind and not (filter_kind == "spearman" and u.kind == "hero"):
 			continue
 		var slot := Vector3(float(i % 5 - 2) * 1.5, 0, float(i / 5) * 1.4)
+		var dest: Vector3 = target + slot
+		if world_ref and world_ref.has_method("_clamp_order"):
+			dest = world_ref._clamp_order(u, dest)
 		if attack_move:
-			u.issue_attack_move(target + slot)
+			u.issue_attack_move(dest)
 		else:
-			u.issue_move(target + slot)
+			u.issue_move(dest)
 		i += 1
 
 
@@ -373,24 +381,28 @@ func import_text(raw: String) -> bool:
 	var t := raw.strip_edges()
 	if t.is_empty():
 		return false
-	# strip markers / comments
-	var lines := t.split("\n")
-	var json_parts: PackedStringArray = PackedStringArray()
-	for line in lines:
-		var s := str(line).strip_edges()
-		if s.begins_with("=====") or s.begins_with("#") or s.is_empty():
-			continue
-		json_parts.append(s)
-	var blob := "".join(json_parts)
-	# also try whole text if pure JSON
-	var raw_try: Variant = JSON.parse_string(blob)
+	var doc: Dictionary = {}
+	# Prefer first complete JSON object (handles triple-paste / glued END===== headers)
+	var extracted := _extract_first_json_object(t)
+	var raw_try: Variant = null
+	if extracted != "":
+		raw_try = JSON.parse_string(extracted)
+	if typeof(raw_try) != TYPE_DICTIONARY:
+		# strip markers / comments and join
+		var lines := t.split("\n")
+		var json_parts: PackedStringArray = PackedStringArray()
+		for line in lines:
+			var s := str(line).strip_edges()
+			if s.begins_with("=====") or s.begins_with("#") or s.is_empty():
+				continue
+			json_parts.append(s)
+		raw_try = JSON.parse_string("".join(json_parts))
 	if typeof(raw_try) != TYPE_DICTIONARY:
 		raw_try = JSON.parse_string(t)
 	if typeof(raw_try) != TYPE_DICTIONARY:
 		return false
-	var doc: Dictionary = raw_try
+	doc = raw_try
 	if str(doc.get("magic", "")) != "" and str(doc.get("magic", "")) != BRAIN_MAGIC:
-		# still accept if weights present
 		if not doc.has("weights"):
 			return false
 	games_played = int(doc.get("games_played", 0))
@@ -398,6 +410,12 @@ func import_text(raw: String) -> bool:
 		wins = doc["wins"]
 	if doc.has("losses"):
 		losses = doc["losses"]
+	if doc.has("session_wins"):
+		session_wins = doc["session_wins"]
+	if doc.has("session_games"):
+		session_games = int(doc["session_games"])
+	if doc.has("last_winner"):
+		last_winner = str(doc["last_winner"])
 	learning_rate = float(doc.get("learning_rate", learning_rate))
 	epsilon = float(doc.get("epsilon", epsilon))
 	if doc.has("weights") and typeof(doc["weights"]) == TYPE_DICTIONARY:
@@ -407,6 +425,34 @@ func import_text(raw: String) -> bool:
 	last_export_text = export_text()
 	save_brain()
 	return true
+
+
+func _extract_first_json_object(text: String) -> String:
+	var start := text.find("{")
+	if start < 0:
+		return ""
+	var depth := 0
+	var in_str := false
+	var esc := false
+	for i in range(start, text.length()):
+		var ch := text[i]
+		if in_str:
+			if esc:
+				esc = false
+			elif ch == "\\":
+				esc = true
+			elif ch == "\"":
+				in_str = false
+			continue
+		if ch == "\"":
+			in_str = true
+		elif ch == "{":
+			depth += 1
+		elif ch == "}":
+			depth -= 1
+			if depth == 0:
+				return text.substr(start, i - start + 1)
+	return ""
 
 
 func save_brain() -> bool:

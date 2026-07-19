@@ -223,13 +223,13 @@ func _build() -> void:
 	cv.add_child(t2)
 	var body := Label.new()
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	body.text = "Pharaoh rejected the easy roads. Through the narrow Aruna pass the army of Egypt pours onto the plain. The kings of Canaan wait before the walls of Megiddo.\n\nCommand the host: chariots, archers, and spearmen. Shatter the coalition and seize the fortress approaches."
+	body.text = "His Majesty rejected the easy roads by Taanach and Zephath. Through the narrow Aruna pass the army marches file-by-file, then pours onto the plain—where the Canaanite coalition already waits before the mound-city of Megiddo.\n\nEmerge from the gorge, form wings on the plain (chariots rule open ground), break their host, then seize the southern gate. The fortress is Levantine mudbrick—not an Egyptian temple."
 	body.add_theme_font_size_override("font_size", 15)
 	body.add_theme_color_override("font_color", Color(0.2, 0.12, 0.06))
 	cv.add_child(body)
 	var tip := Label.new()
 	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	tip.text = "Touch: tap select · tap ground move · tap enemy attack · pinch zoom · drag pan\nDesktop: same with mouse · WASD pan · wheel zoom · RMB orbit"
+	tip.text = "Phases: Emerge → Deploy → Battle\nTouch: select · move · attack · pinch zoom · drag pan\nChariots stay on the plain (not up the tell)"
 	tip.add_theme_font_size_override("font_size", 13)
 	tip.add_theme_color_override("font_color", Color(0.3, 0.2, 0.1))
 	cv.add_child(tip)

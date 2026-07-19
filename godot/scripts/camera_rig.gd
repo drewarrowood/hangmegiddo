@@ -92,8 +92,8 @@ func _handle_keyboard(delta: float) -> void:
 
 
 func _clamp_target() -> void:
-	_target_pos.x = clampf(_target_pos.x, -70.0, 70.0)
-	_target_pos.z = clampf(_target_pos.z, -70.0, 75.0)
+	_target_pos.x = clampf(_target_pos.x, -75.0, 75.0)
+	_target_pos.z = clampf(_target_pos.z, -75.0, 90.0)
 	_target_pos.y = 0.0
 
 

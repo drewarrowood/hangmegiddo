@@ -38,14 +38,16 @@ func _ready() -> void:
 	world.name = "GameWorld"
 	add_child(world)
 	world.learning_ai = ai
+	world.battlefield = battlefield
 	world.setup(scenario)
 	world.paused = true
 
 	camera_rig = CameraRigScript.new()
 	camera_rig.name = "CameraRig"
 	add_child(camera_rig)
-	var spawn: Array = scenario.get("map", {}).get("egypt_spawn", [0, 0, 50])
-	camera_rig.focus_on(Vector3(float(spawn[0]), 0, float(spawn[2])))
+	# Start looking down the Aruna gorge toward the plain
+	var deep: Array = scenario.get("map", {}).get("pass_deep", [0, 0, 62])
+	camera_rig.focus_on(Vector3(float(deep[0]), 0, float(deep[2])))
 	camera_rig.ground_clicked.connect(_on_ground_clicked)
 	camera_rig.unit_clicked.connect(_on_unit_clicked)
 
@@ -66,14 +68,15 @@ func _ready() -> void:
 	world.unit_count_changed.connect(_on_counts)
 	world.battle_log.connect(hud.push_log)
 	world.victory.connect(_on_victory)
+	world.phase_changed.connect(_on_phase)
 
 	_egypt_n = world.count_side("egypt")
 	_canaan_n = world.count_side("canaan")
 	hud.set_strength(world.total_strength("egypt"), world.total_strength("canaan"), _egypt_n, _canaan_n)
 	hud.set_brain_text(ai.export_text())
 	hud.set_ai_status(ai.status_text())
-	hud.push_log("Megiddo awaits. Self-play trains AI; open BRAIN to Ctrl-A copy/paste weights.")
-	hud.push_log("M toggles soft Egyptian ambient (gentle for feline judges).")
+	hud.push_log("Aruna pass behind you; Megiddo's mound to the north. Canaan waits on the plain.")
+	hud.push_log("Chariots fight on the open plain only. M music · BRAIN paste · SELF-PLAY.")
 	if ai.games_played > 0:
 		hud.push_log("Loaded AI brain: %s" % ai.status_text())
 	if AudioManager:
@@ -101,9 +104,27 @@ func _on_start() -> void:
 	else:
 		world.control_mode = "human"
 		world.time_scale = 1.0
-		hud.push_log("Trumpets of the royal division sound. Advance!")
+		hud.push_log("Column emerges from Aruna. Hold until the plain opens, then form and strike.")
+	# Camera follows emerge toward pass mouth
+	if camera_rig and scenario.has("map"):
+		var mouth: Array = scenario["map"].get("pass_mouth", [0, 0, 32])
+		camera_rig.focus_on(Vector3(float(mouth[0]), 0, float(mouth[2])))
 	hud.set_selfplay_ui(_selfplay)
 	hud.set_ai_status(ai.status_text())
+
+
+func _on_phase(phase: String, detail: String) -> void:
+	hud.push_log("— %s — %s" % [phase.to_upper(), detail])
+	if hud.brief_label:
+		match phase:
+			"emerge":
+				hud.brief_label.text = "Phase: ARUNA EMERGE — column leaves the gorge"
+			"deploy":
+				hud.brief_label.text = "Phase: DEPLOY — wings on the plain, Megiddo north"
+			"battle":
+				hud.brief_label.text = "Phase: BATTLE — break the host, then seize the gate"
+			_:
+				hud.brief_label.text = detail
 
 
 func _on_selfplay_toggle() -> void:

@@ -7,8 +7,13 @@ signal strength_changed(egypt: float, canaan: float)
 signal battle_log(text: String)
 signal victory(side: String, reason: String)
 signal unit_count_changed(egypt_n: int, canaan_n: int)
+signal phase_changed(phase: String, detail: String)
 
 const UnitSceneScript = preload("res://scripts/unit.gd")
+
+const PHASE_EMERGE := "emerge"
+const PHASE_DEPLOY := "deploy"
+const PHASE_BATTLE := "battle"
 
 var scenario: Dictionary = {}
 var units: Array = [] ## BattleUnit
@@ -19,14 +24,20 @@ var winner: String = ""
 var hold_megiddo_time: float = 0.0
 var elapsed: float = 0.0
 var paused: bool = false
+var phase: String = PHASE_EMERGE
+var phase_time: float = 0.0
+var battlefield = null ## Battlefield
 
 var _egypt_root: Node3D
 var _canaan_root: Node3D
 var _rng := RandomNumberGenerator.new()
-var megiddo_pos: Vector3 = Vector3(0, 0, -55)
-var hold_need: float = 25.0
+var megiddo_pos: Vector3 = Vector3(0, 0, -58)
+var pass_mouth: Vector3 = Vector3(0, 0, 32)
+var hold_need: float = 28.0
 var collapse_ratio: float = 0.28
 var time_limit: float = 900.0
+var emerge_seconds: float = 28.0
+var deploy_seconds: float = 12.0
 var _start_canaan_str: float = 1.0
 var _start_egypt_str: float = 1.0
 var _ai_timer: float = 0.0
@@ -40,12 +51,17 @@ func setup(scen: Dictionary) -> void:
 	scenario = scen
 	player_side = str(scen.get("player_side", "egypt"))
 	var map: Dictionary = scen.get("map", {})
-	var mp: Array = map.get("megiddo_pos", [0, 0, -55])
+	var mp: Array = map.get("megiddo_pos", [0, 0, -58])
 	megiddo_pos = Vector3(float(mp[0]), float(mp[1]), float(mp[2]))
+	var pm: Array = map.get("pass_mouth", [0, 0, 32])
+	pass_mouth = Vector3(float(pm[0]), float(pm[1]), float(pm[2]))
 	var vic: Dictionary = scen.get("victory", {})
-	hold_need = float(vic.get("hold_megiddo_seconds", 25))
+	hold_need = float(vic.get("hold_megiddo_seconds", 28))
 	collapse_ratio = float(vic.get("enemy_strength_collapse", 0.28))
 	time_limit = float(vic.get("time_limit_seconds", 900))
+	var ph: Dictionary = scen.get("phases", {})
+	emerge_seconds = float(ph.get("emerge_seconds", 28))
+	deploy_seconds = float(ph.get("deploy_seconds", 12))
 	_rng.randomize()
 	_clear_armies()
 	_egypt_root = Node3D.new()
@@ -62,8 +78,12 @@ func setup(scen: Dictionary) -> void:
 	winner = ""
 	hold_megiddo_time = 0.0
 	elapsed = 0.0
+	phase_time = 0.0
+	phase = PHASE_EMERGE
 	selected.clear()
-	emit_signal("battle_log", "The army of Pharaoh emerges from Aruna onto the plain of Megiddo.")
+	_begin_emerge_orders()
+	battle_log.emit("Year 23: His Majesty forces the Aruna road. Column in the gorge—plain ahead.")
+	phase_changed.emit(phase, "Emerging from Aruna pass")
 	_emit_strength()
 
 
@@ -95,11 +115,10 @@ func _spawn_side(side: String, data: Dictionary) -> void:
 		var off: Array = group.get("offset", [0, 0])
 		var base := Vector3(float(off[0]), 0.0, float(off[1]))
 		var uname: String = str(group.get("name", ""))
+		var form: String = str(group.get("formation", "block"))
 		for i in range(count):
 			var u: BattleUnit = UnitSceneScript.new()
-			var ang := float(i) * 0.7
-			var ring := 1.2 + float(i % 5) * 0.9
-			var pos := base + Vector3(cos(ang) * ring, 0.0, sin(ang) * ring)
+			var pos := base + _spawn_slot(i, count, form, side)
 			pos.y = 0.0
 			var nm := uname if (uname != "" and i == 0) else ""
 			u.setup(side, kind, pos, nm)
@@ -108,6 +127,43 @@ func _spawn_side(side: String, data: Dictionary) -> void:
 			parent.add_child(u)
 			u.place(pos)
 			units.append(u)
+
+
+func _spawn_slot(i: int, n: int, form: String, side: String) -> Vector3:
+	match form:
+		"column":
+			# single-file up the gorge (northward = -Z toward plain from deep south)
+			return Vector3((float(i % 2) - 0.5) * 1.4, 0.0, float(i) * 1.35)
+		"line":
+			return Vector3((float(i) - float(n) * 0.5) * 2.0, 0.0, float(i % 2) * 1.2)
+		_:
+			var cols := int(ceili(sqrt(float(maxi(n, 1)))))
+			var row: int = i / maxi(cols, 1)
+			var col: int = i % maxi(cols, 1)
+			var face := -1.0 if side == "canaan" else 1.0
+			return Vector3((float(col) - float(cols) * 0.5) * 1.7, 0.0, float(row) * 1.6 * face)
+
+
+func _begin_emerge_orders() -> void:
+	## Egypt marches out of the gorge onto the pass mouth / plain.
+	for u in units:
+		if not u.is_alive() or u.side != "egypt":
+			continue
+		var dest := pass_mouth + Vector3(randf_range(-10, 10), 0, randf_range(-4, 8))
+		if u.kind == "chariot":
+			dest.z = mini(dest.z, pass_mouth.z + 2.0)
+			dest = _clamp_order(u, dest)
+		u.issue_attack_move(dest)
+	# Canaan holds the plain lines (already deployed historically)
+	for u2 in units:
+		if u2.is_alive() and u2.side == "canaan" and u2.global_position.distance_to(megiddo_pos) > 20.0:
+			u2.issue_hold()
+
+
+func _clamp_order(u: BattleUnit, pos: Vector3) -> Vector3:
+	if battlefield and battlefield.has_method("clamp_move_for_kind"):
+		return battlefield.clamp_move_for_kind(u.kind, pos)
+	return pos
 
 
 func _on_unit_died(u: BattleUnit) -> void:
@@ -190,16 +246,16 @@ func select_all_player() -> void:
 func order_move(pos: Vector3) -> void:
 	if selected.is_empty():
 		return
-	# formation slotting
 	var n: int = selected.size()
 	var i := 0
 	for u in selected:
 		if not is_instance_valid(u) or not u.is_alive():
 			continue
 		var slot := _formation_offset(i, n)
-		u.issue_move(pos + slot)
+		var dest := _clamp_order(u, pos + slot)
+		u.issue_move(dest)
 		i += 1
-	battle_log.emit("March to field grid.")
+	battle_log.emit("March ordered.")
 
 
 func order_attack_move(pos: Vector3) -> void:
@@ -210,7 +266,8 @@ func order_attack_move(pos: Vector3) -> void:
 	for u in selected:
 		if not is_instance_valid(u) or not u.is_alive():
 			continue
-		u.issue_attack_move(pos + _formation_offset(i, n))
+		var dest := _clamp_order(u, pos + _formation_offset(i, n))
+		u.issue_attack_move(dest)
 		i += 1
 	battle_log.emit("Advance and engage.")
 
@@ -240,15 +297,56 @@ func _process(delta: float) -> void:
 		return
 	var d: float = delta * time_scale
 	elapsed += d
+	phase_time += d
+	_update_phase()
 	_ai_timer -= d
 	if _ai_timer <= 0.0:
 		_ai_timer = 0.85 if control_mode == "selfplay" else 1.1
-		if control_mode == "selfplay" and learning_ai:
+		if phase == PHASE_EMERGE and control_mode != "selfplay":
+			# Canaan holds; Egypt scripted emerge
+			pass
+		elif control_mode == "selfplay" and learning_ai:
 			learning_ai.think_both(self)
 		else:
 			_run_canaan_ai()
-	_auto_acquire_targets(d)
+	if phase != PHASE_EMERGE or control_mode == "selfplay":
+		_auto_acquire_targets(d)
 	_check_victory(d)
+
+
+func _update_phase() -> void:
+	if phase == PHASE_EMERGE and phase_time >= emerge_seconds:
+		phase = PHASE_DEPLOY
+		phase_time = 0.0
+		battle_log.emit("The host debouches onto the plain. Form the wings—Megiddo lies north.")
+		phase_changed.emit(phase, "Deploy on the plain")
+		_deploy_egypt_wings()
+	elif phase == PHASE_DEPLOY and phase_time >= deploy_seconds:
+		phase = PHASE_BATTLE
+		phase_time = 0.0
+		battle_log.emit("Battle is joined on the plain before Megiddo.")
+		phase_changed.emit(phase, "Battle")
+
+
+func _deploy_egypt_wings() -> void:
+	## After emerging: chariots to wings, infantry center (historical feel).
+	for u in units:
+		if not u.is_alive() or u.side != "egypt":
+			continue
+		if u.order == "attack" and u.attack_target:
+			continue
+		var dest: Vector3
+		match u.kind:
+			"chariot":
+				var side_x := -22.0 if u.global_position.x < 0.0 else 22.0
+				dest = Vector3(side_x, 0, pass_mouth.z - 12.0)
+			"archer":
+				dest = Vector3(clampf(u.global_position.x, -8, 8), 0, pass_mouth.z - 6.0)
+			"hero":
+				dest = Vector3(0, 0, pass_mouth.z - 10.0)
+			_:
+				dest = Vector3(clampf(u.global_position.x * 0.5, -14, 14), 0, pass_mouth.z - 14.0)
+		u.issue_move(_clamp_order(u, dest))
 
 
 func _auto_acquire_targets(_delta: float) -> void:
@@ -296,35 +394,37 @@ func _run_canaan_ai() -> void:
 			egypt_units.append(u)
 	if canaan_units.is_empty() or egypt_units.is_empty():
 		return
-	# centroid of egypt
 	var ec := Vector3.ZERO
 	for e in egypt_units:
 		ec += e.global_position
 	ec /= float(egypt_units.size())
-	var egypt_near_city := ec.distance_to(megiddo_pos) < 40.0
+	var egypt_on_plain := ec.z < 25.0
+	var egypt_near_city := ec.distance_to(megiddo_pos) < 36.0
 	for u in canaan_units:
 		if u.order == "attack" and u.attack_target and is_instance_valid(u.attack_target) and u.attack_target.is_alive():
 			continue
 		var foe: BattleUnit = _nearest_enemy(u, 55.0)
 		if foe == null:
 			continue
-		# garrison hold megiddo if marked by proximity
-		if u.global_position.distance_to(megiddo_pos) < 18.0 and not egypt_near_city:
-			if u.order != "hold":
-				u.issue_hold()
+		# Garrison holds the mound/gate
+		if u.global_position.distance_to(megiddo_pos) < 22.0 and not egypt_near_city:
+			u.issue_hold()
 			var near: BattleUnit = _nearest_enemy(u, 14.0)
 			if near:
 				u.issue_attack(near)
 			continue
-		# chariots aggressive intercept
+		# During emerge, main line waits (expected the other roads)
+		if phase == PHASE_EMERGE and not egypt_on_plain:
+			u.issue_hold()
+			continue
 		if u.kind == "chariot":
-			u.issue_attack(foe)
-		elif egypt_near_city or u.global_position.distance_to(foe.global_position) < 28.0:
+			var dest := _clamp_order(u, foe.global_position)
+			u.issue_attack_move(dest)
+		elif egypt_near_city or u.global_position.distance_to(foe.global_position) < 26.0:
 			u.issue_attack(foe)
 		else:
-			# screen the plain
-			var screen := Vector3(u.global_position.x * 0.3, 0, -15.0)
-			u.issue_attack_move(screen.lerp(foe.global_position, 0.35))
+			var screen := Vector3(u.global_position.x * 0.4, 0, -14.0)
+			u.issue_attack_move(_clamp_order(u, screen.lerp(foe.global_position, 0.4)))
 
 
 func _check_victory(delta: float) -> void:
@@ -336,13 +436,14 @@ func _check_victory(delta: float) -> void:
 	if es <= 10.0:
 		_win("canaan", "Egypt's army is shattered on the plain.")
 		return
-	# hold megiddo: egyptian strength near city
+	# Hold the gate approaches (south of the tell), not the summit alone
+	var gate := megiddo_pos + Vector3(0, 0, 18)
 	var egypt_on_city := 0.0
 	var canaan_on_city := 0.0
 	for u in units:
 		if not u.is_alive():
 			continue
-		if u.global_position.distance_to(megiddo_pos) < 18.0:
+		if u.global_position.distance_to(gate) < 16.0 or u.global_position.distance_to(megiddo_pos) < 20.0:
 			if u.side == "egypt":
 				egypt_on_city += u.get_strength()
 			else:
@@ -352,7 +453,7 @@ func _check_victory(delta: float) -> void:
 	else:
 		hold_megiddo_time = maxf(0.0, hold_megiddo_time - delta * 0.5)
 	if hold_megiddo_time >= hold_need:
-		_win("egypt", "Megiddo's approaches secured. The siege begins under Thutmose.")
+		_win("egypt", "The gate of Megiddo is sealed. The siege begins under Thutmose.")
 		return
 	if elapsed >= time_limit:
 		if es >= cs:

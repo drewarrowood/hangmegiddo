@@ -1,8 +1,118 @@
 {
-  "magic": "HANG_MEGIDDO_BRAIN_V1",
-  "version": 1,
-  "games_played": 0,
-  "wins": { "egypt": 0, "canaan": 0 },
-  "losses": { "egypt": 0, "canaan": 0 },
-  "weights": {}
+	"epsilon": 0.2,
+	"games_played": 3,
+	"learning_rate": 0.1,
+	"losses": {
+		"canaan": 1.0,
+		"egypt": 2.0
+	},
+	"magic": "HANG_MEGIDDO_BRAIN_V1",
+	"saved_at_unix": 1784426018,
+	"version": 1,
+	"weight_norm": 9.65339473769133,
+	"weights": {
+		"archer_harass": {
+			"bias": -0.396890977443609,
+			"chariot_ratio": -0.0662331608584087,
+			"enemy_city": -0.142763157894737,
+			"enemy_weak": 0.718111842105263,
+			"hold_progress": 0.777598684210526,
+			"own_city": 0.0899760338345865,
+			"own_weak": -0.77419454887218,
+			"strength_ratio": 0.299704411107839,
+			"time_frac": -0.015487370020948
+		},
+		"charge_center": {
+			"bias": 0.348836466165414,
+			"chariot_ratio": 0.0244393448846498,
+			"enemy_city": 0.0,
+			"enemy_weak": 1.12363439849624,
+			"hold_progress": 1.21684962406015,
+			"own_city": 0.0,
+			"own_weak": -0.997896616541353,
+			"strength_ratio": 1.31750036832105,
+			"time_frac": 0.0255050802955676
+		},
+		"chariot_strike": {
+			"bias": 2.18596334586466,
+			"chariot_ratio": 0.548903787259721,
+			"enemy_city": -0.040984962406015,
+			"enemy_weak": 4.0,
+			"hold_progress": 4.0,
+			"own_city": 0.041906015037594,
+			"own_weak": -2.23920582706767,
+			"strength_ratio": 3.15251733965259,
+			"time_frac": 0.12651510825896
+		},
+		"flank_left": {
+			"bias": -0.0860526315789476,
+			"chariot_ratio": 0.00458165313371718,
+			"enemy_city": -0.136304981203007,
+			"enemy_weak": 0.99581484962406,
+			"hold_progress": 0.891337406015037,
+			"own_city": -0.03,
+			"own_weak": -1.18709680451128,
+			"strength_ratio": 0.609107973904144,
+			"time_frac": -0.00605955427632834
+		},
+		"flank_right": {
+			"bias": 0.295387218045113,
+			"chariot_ratio": -0.0153459727400089,
+			"enemy_city": 0.0,
+			"enemy_weak": 2.14361184210526,
+			"hold_progress": 2.0717772556391,
+			"own_city": 0.119046052631579,
+			"own_weak": -1.74420018796992,
+			"strength_ratio": 1.21005098905385,
+			"time_frac": 0.0195400243924441
+		},
+		"hold_line": {
+			"bias": -0.688883458646616,
+			"chariot_ratio": -0.012154123620497,
+			"enemy_city": 0.03,
+			"enemy_weak": 1.34197838345865,
+			"hold_progress": 1.27458740601504,
+			"own_city": 0.07,
+			"own_weak": -1.56803195488722,
+			"strength_ratio": 0.665858272028255,
+			"time_frac": -0.0621785922866057
+		},
+		"noop": {
+			"bias": -0.70043984962406,
+			"chariot_ratio": -0.00238067449964328,
+			"enemy_city": 0.0,
+			"enemy_weak": 0.66637969924812,
+			"hold_progress": 0.767861842105263,
+			"own_city": 0.0476875,
+			"own_weak": -1.25820394736842,
+			"strength_ratio": 0.372881140838791,
+			"time_frac": -0.0304249631415133
+		},
+		"push_city": {
+			"bias": -0.341238721804511,
+			"chariot_ratio": -0.00723033108884635,
+			"enemy_city": 0.5,
+			"enemy_weak": 0.824433270676692,
+			"hold_progress": 0.759087406015037,
+			"own_city": 0.0,
+			"own_weak": -1.1458787593985,
+			"strength_ratio": 0.454277977266859,
+			"time_frac": -0.0168146747901326
+		},
+		"retreat_regroup": {
+			"bias": -0.516681390977444,
+			"chariot_ratio": 0.00595071018871648,
+			"enemy_city": -0.0485625,
+			"enemy_weak": 0.753628759398496,
+			"hold_progress": 0.663360902255639,
+			"own_city": 0.0,
+			"own_weak": -1.32891071428571,
+			"strength_ratio": 0.447983724897716,
+			"time_frac": -0.0405950584314438
+		}
+	},
+	"wins": {
+		"canaan": 2.0,
+		"egypt": 1.0
+	}
 }

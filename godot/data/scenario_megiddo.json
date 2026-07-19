@@ -3,38 +3,49 @@
   "year": "c. 1457 BCE",
   "subtitle": "Thutmose III forces the Aruna pass and strikes the Canaanite host",
   "player_side": "egypt",
-  "briefing": "Pharaoh has chosen the narrow Aruna road. The enemy waits on the plain before Megiddo. Break their host, seize the fortress approaches, and claim the field for Egypt.",
+  "briefing": "The council urged the northern or southern roads. His Majesty chose the narrow Aruna pass. The army marches single-file through the gorge and will pour onto the plain before Megiddo—where the kings of Canaan wait, expecting Egypt on the easy roads. Deploy from the pass mouth, break their host on the open ground, then seize the gate of the mound-city.",
   "map": {
-    "size": 180,
-    "megiddo_pos": [0, 0, -55],
-    "egypt_spawn": [0, 0, 50],
-    "plain_center": [0, 0, 0]
+    "size": 200,
+    "megiddo_pos": [0, 0, -58],
+    "gate_pos": [0, 0, -42],
+    "plain_center": [0, 0, -5],
+    "pass_mouth": [0, 0, 32],
+    "pass_deep": [0, 0, 62],
+    "egypt_spawn": [0, 0, 58],
+    "plain_z_min": -38,
+    "plain_z_max": 28,
+    "plain_x_half": 48
+  },
+  "phases": {
+    "emerge_seconds": 28,
+    "deploy_seconds": 12
   },
   "victory": {
-    "hold_megiddo_seconds": 25,
+    "hold_megiddo_seconds": 28,
     "enemy_strength_collapse": 0.28,
     "time_limit_seconds": 900
   },
   "egypt": {
-    "treasury_flavor": "Royal supply train",
     "units": [
-      {"kind": "chariot", "count": 6, "offset": [-18, 42]},
-      {"kind": "chariot", "count": 5, "offset": [18, 44]},
-      {"kind": "spearman", "count": 14, "offset": [-8, 52]},
-      {"kind": "spearman", "count": 14, "offset": [8, 54]},
-      {"kind": "archer", "count": 10, "offset": [0, 60]},
-      {"kind": "hero", "count": 1, "offset": [0, 48], "name": "Thutmose III"}
+      {"kind": "hero", "count": 1, "offset": [0, 68], "name": "Thutmose III", "formation": "column"},
+      {"kind": "chariot", "count": 5, "offset": [-3, 72], "formation": "column"},
+      {"kind": "chariot", "count": 5, "offset": [3, 74], "formation": "column"},
+      {"kind": "spearman", "count": 12, "offset": [-2, 78], "formation": "column"},
+      {"kind": "spearman", "count": 12, "offset": [2, 80], "formation": "column"},
+      {"kind": "archer", "count": 10, "offset": [0, 84], "formation": "column"},
+      {"kind": "chariot", "count": 4, "offset": [0, 64], "formation": "column"}
     ]
   },
   "canaan": {
     "units": [
-      {"kind": "chariot", "count": 5, "offset": [-20, -20]},
-      {"kind": "chariot", "count": 5, "offset": [22, -18]},
-      {"kind": "spearman", "count": 16, "offset": [-10, -30]},
-      {"kind": "spearman", "count": 16, "offset": [12, -32]},
-      {"kind": "archer", "count": 12, "offset": [0, -38]},
-      {"kind": "spearman", "count": 10, "offset": [0, -52], "garrison": true},
-      {"kind": "hero", "count": 1, "offset": [4, -28], "name": "King of Kadesh"}
+      {"kind": "chariot", "count": 6, "offset": [-18, -12], "formation": "line"},
+      {"kind": "chariot", "count": 6, "offset": [18, -12], "formation": "line"},
+      {"kind": "spearman", "count": 14, "offset": [-12, -20], "formation": "block"},
+      {"kind": "spearman", "count": 14, "offset": [12, -20], "formation": "block"},
+      {"kind": "archer", "count": 10, "offset": [0, -26], "formation": "line"},
+      {"kind": "hero", "count": 1, "offset": [2, -16], "name": "King of Kadesh", "formation": "line"},
+      {"kind": "spearman", "count": 10, "offset": [0, -48], "garrison": true, "formation": "block"},
+      {"kind": "archer", "count": 4, "offset": [0, -45], "garrison": true, "formation": "line"}
     ]
   }
 }
