@@ -1,0 +1,8 @@
+**/.godot/
+godot/build/
+godot/import_log.txt
+godot/run_log.txt
+godot/export_err.txt
+*.tmp
+.DS_Store
+Thumbs.db

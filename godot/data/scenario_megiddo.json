@@ -1,0 +1,40 @@
+{
+  "title": "Battle of Megiddo",
+  "year": "c. 1457 BCE",
+  "subtitle": "Thutmose III forces the Aruna pass and strikes the Canaanite host",
+  "player_side": "egypt",
+  "briefing": "Pharaoh has chosen the narrow Aruna road. The enemy waits on the plain before Megiddo. Break their host, seize the fortress approaches, and claim the field for Egypt.",
+  "map": {
+    "size": 180,
+    "megiddo_pos": [0, 0, -55],
+    "egypt_spawn": [0, 0, 50],
+    "plain_center": [0, 0, 0]
+  },
+  "victory": {
+    "hold_megiddo_seconds": 25,
+    "enemy_strength_collapse": 0.28,
+    "time_limit_seconds": 900
+  },
+  "egypt": {
+    "treasury_flavor": "Royal supply train",
+    "units": [
+      {"kind": "chariot", "count": 6, "offset": [-18, 42]},
+      {"kind": "chariot", "count": 5, "offset": [18, 44]},
+      {"kind": "spearman", "count": 14, "offset": [-8, 52]},
+      {"kind": "spearman", "count": 14, "offset": [8, 54]},
+      {"kind": "archer", "count": 10, "offset": [0, 60]},
+      {"kind": "hero", "count": 1, "offset": [0, 48], "name": "Thutmose III"}
+    ]
+  },
+  "canaan": {
+    "units": [
+      {"kind": "chariot", "count": 5, "offset": [-20, -20]},
+      {"kind": "chariot", "count": 5, "offset": [22, -18]},
+      {"kind": "spearman", "count": 16, "offset": [-10, -30]},
+      {"kind": "spearman", "count": 16, "offset": [12, -32]},
+      {"kind": "archer", "count": 12, "offset": [0, -38]},
+      {"kind": "spearman", "count": 10, "offset": [0, -52], "garrison": true},
+      {"kind": "hero", "count": 1, "offset": [4, -28], "name": "King of Kadesh"}
+    ]
+  }
+}
