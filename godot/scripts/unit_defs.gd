@@ -12,8 +12,9 @@ const KINDS := {
 		"speed": 6.5,
 		"radius": 0.55,
 		"mass": 1.0,
-		"color_egypt": Color(0.15, 0.35, 0.55),
-		"color_canaan": Color(0.55, 0.22, 0.18),
+		# faction colors applied via FactionStyle gradients
+		"color_egypt": Color(0.12, 0.32, 0.58),
+		"color_canaan": Color(0.58, 0.16, 0.2),
 		"scale": Vector3(0.9, 1.4, 0.9),
 	},
 	"archer": {
@@ -25,8 +26,8 @@ const KINDS := {
 		"speed": 6.0,
 		"radius": 0.5,
 		"mass": 0.8,
-		"color_egypt": Color(0.2, 0.45, 0.4),
-		"color_canaan": Color(0.5, 0.35, 0.2),
+		"color_egypt": Color(0.15, 0.48, 0.52),
+		"color_canaan": Color(0.52, 0.28, 0.4),
 		"scale": Vector3(0.8, 1.35, 0.8),
 	},
 	"chariot": {
@@ -38,8 +39,8 @@ const KINDS := {
 		"speed": 12.5,
 		"radius": 1.1,
 		"mass": 2.2,
-		"color_egypt": Color(0.85, 0.7, 0.2),
-		"color_canaan": Color(0.7, 0.45, 0.15),
+		"color_egypt": Color(0.9, 0.72, 0.2),
+		"color_canaan": Color(0.72, 0.35, 0.18),
 		"scale": Vector3(1.6, 0.9, 2.2),
 	},
 	"hero": {
@@ -51,8 +52,8 @@ const KINDS := {
 		"speed": 8.5,
 		"radius": 0.7,
 		"mass": 1.4,
-		"color_egypt": Color(0.95, 0.82, 0.25),
-		"color_canaan": Color(0.75, 0.2, 0.35),
+		"color_egypt": Color(0.95, 0.82, 0.28),
+		"color_canaan": Color(0.8, 0.18, 0.35),
 		"scale": Vector3(1.1, 1.7, 1.1),
 	},
 }

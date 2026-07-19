@@ -1,0 +1,8 @@
+{
+  "magic": "HANG_MEGIDDO_BRAIN_V1",
+  "version": 1,
+  "games_played": 0,
+  "wins": { "egypt": 0, "canaan": 0 },
+  "losses": { "egypt": 0, "canaan": 0 },
+  "weights": {}
+}

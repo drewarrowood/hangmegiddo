@@ -73,8 +73,11 @@ func _ready() -> void:
 	hud.set_brain_text(ai.export_text())
 	hud.set_ai_status(ai.status_text())
 	hud.push_log("Megiddo awaits. Self-play trains AI; open BRAIN to Ctrl-A copy/paste weights.")
+	hud.push_log("M toggles soft Egyptian ambient (gentle for feline judges).")
 	if ai.games_played > 0:
 		hud.push_log("Loaded AI brain: %s" % ai.status_text())
+	if AudioManager:
+		AudioManager.start_music()
 
 
 func _load_scenario() -> void:
@@ -240,6 +243,8 @@ func _on_counts(en: int, cn: int) -> void:
 
 
 func _on_victory(side: String, reason: String) -> void:
+	if AudioManager:
+		AudioManager.play_victory()
 	if _selfplay and ai:
 		var summary: Dictionary = ai.end_selfplay_episode(side, world)
 		hud.set_brain_text(str(summary.get("export", ai.export_text())))
@@ -294,6 +299,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_SPACE:
 			_toggle_pause()
+		elif event.keycode == KEY_M:
+			if AudioManager:
+				AudioManager.toggle_music()
+				hud.push_log("Music %s" % ("on" if AudioManager._music_on else "off"))
 		elif event.keycode == KEY_A and _started and not _selfplay:
 			_attack_move_mode = true
 			hud.push_log("Attack-move armed.")

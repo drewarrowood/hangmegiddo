@@ -104,6 +104,7 @@ func _spawn_side(side: String, data: Dictionary) -> void:
 			var nm := uname if (uname != "" and i == 0) else ""
 			u.setup(side, kind, pos, nm)
 			u.died.connect(_on_unit_died)
+			u.cry.connect(_on_unit_cry)
 			parent.add_child(u)
 			u.place(pos)
 			units.append(u)
@@ -119,6 +120,14 @@ func _on_unit_died(u: BattleUnit) -> void:
 		battle_log.emit("Canaanite %s broken." % u.display_name)
 	else:
 		battle_log.emit("Egyptian %s fallen!" % u.display_name)
+
+
+func _on_unit_cry(u: BattleUnit, text: String) -> void:
+	if text == "":
+		return
+	if randf() < 0.35:
+		var lang := "Egyptian" if u.side == "egypt" else "Canaanite"
+		battle_log.emit("%s %s: «%s»" % [lang, u.display_name, text])
 
 
 func _emit_strength() -> void:

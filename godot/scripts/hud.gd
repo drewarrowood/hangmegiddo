@@ -66,7 +66,7 @@ func _build() -> void:
 	title_label.add_theme_color_override("font_color", Color(0.95, 0.88, 0.55))
 	top_v.add_child(title_label)
 	brief_label = Label.new()
-	brief_label.text = "Thutmose III — seize the plain, take Megiddo"
+	brief_label.text = "Egypt (lapis·gold) vs Canaan (crimson·bronze)  ·  M music"
 	brief_label.add_theme_font_size_override("font_size", 14)
 	brief_label.add_theme_color_override("font_color", Color(0.85, 0.9, 0.95))
 	top_v.add_child(brief_label)
@@ -398,7 +398,7 @@ func _add_cmd(row: HBoxContainer, text: String, cb: Callable) -> Button:
 
 
 func set_strength(egypt: float, canaan: float, en: int, cn: int) -> void:
-	strength_label.text = "EGYPT  %d men  (%.0f)\nCANAAN %d men  (%.0f)" % [en, egypt, cn, canaan]
+	strength_label.text = "🇪🇬 EGYPT (blue·gold)  %d  (%.0f)\n🩸 CANAAN (crimson)  %d  (%.0f)" % [en, egypt, cn, canaan]
 
 
 func set_selection(units: Array) -> void:

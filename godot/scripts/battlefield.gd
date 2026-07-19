@@ -32,18 +32,23 @@ func _build_sky() -> void:
 	var env := WorldEnvironment.new()
 	var e := Environment.new()
 	e.background_mode = Environment.BG_COLOR
-	e.background_color = Color(0.55, 0.72, 0.88)
+	# warm Nile-valley dusk-gold sky
+	e.background_color = Color(0.62, 0.78, 0.92)
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color(0.95, 0.88, 0.7)
-	e.ambient_light_energy = 0.45
+	e.ambient_light_color = Color(1.0, 0.92, 0.75)
+	e.ambient_light_energy = 0.55
 	e.tonemap_mode = Environment.TONE_MAPPER_ACES
+	e.tonemap_exposure = 1.05
 	e.glow_enabled = true
-	e.glow_intensity = 0.35
-	e.glow_bloom = 0.15
+	e.glow_intensity = 0.45
+	e.glow_bloom = 0.22
 	e.fog_enabled = true
-	e.fog_light_color = Color(0.9, 0.82, 0.65)
-	e.fog_density = 0.0018
-	e.fog_aerial_perspective = 0.5
+	e.fog_light_color = Color(0.95, 0.85, 0.65)
+	e.fog_density = 0.0015
+	e.fog_aerial_perspective = 0.65
+	e.adjustment_enabled = true
+	e.adjustment_saturation = 1.12
+	e.adjustment_contrast = 1.05
 	env.environment = e
 	add_child(env)
 
@@ -70,9 +75,25 @@ func _build_ground() -> void:
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(map_size, map_size)
 	mesh.mesh = plane
+	var g := Gradient.new()
+	g.colors = PackedColorArray([
+		Color(0.86, 0.72, 0.48),
+		Color(0.72, 0.58, 0.36),
+		Color(0.8, 0.68, 0.45),
+	])
+	g.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
+	var gt := GradientTexture2D.new()
+	gt.gradient = g
+	gt.width = 128
+	gt.height = 128
+	gt.fill = GradientTexture2D.FILL_LINEAR
+	gt.fill_from = Vector2(0, 0)
+	gt.fill_to = Vector2(1, 1)
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.78, 0.65, 0.42)
+	mat.albedo_texture = gt
+	mat.albedo_color = Color(1, 1, 1)
 	mat.roughness = 0.92
+	mat.uv1_scale = Vector3(8, 8, 8)
 	mesh.material_override = mat
 	ground.add_child(mesh)
 	var col := CollisionShape3D.new()
@@ -153,8 +174,14 @@ func _build_megiddo() -> void:
 	root.add_child(mound)
 
 	# walls
+	var wall_g := Gradient.new()
+	wall_g.colors = PackedColorArray([Color(0.92, 0.84, 0.65), Color(0.72, 0.58, 0.4)])
+	var wall_gt := GradientTexture2D.new()
+	wall_gt.gradient = wall_g
+	wall_gt.fill_from = Vector2(0.5, 0)
+	wall_gt.fill_to = Vector2(0.5, 1)
 	var wall_mat := StandardMaterial3D.new()
-	wall_mat.albedo_color = Color(0.85, 0.78, 0.62)
+	wall_mat.albedo_texture = wall_gt
 	wall_mat.roughness = 0.7
 	for i in range(8):
 		var ang := float(i) / 8.0 * TAU
