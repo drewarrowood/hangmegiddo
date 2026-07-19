@@ -28,7 +28,12 @@ var hold_need: float = 25.0
 var collapse_ratio: float = 0.28
 var time_limit: float = 900.0
 var _start_canaan_str: float = 1.0
+var _start_egypt_str: float = 1.0
 var _ai_timer: float = 0.0
+## "human" = player egypt, AI canaan · "selfplay" = both learning AI
+var control_mode: String = "human"
+var learning_ai = null
+var time_scale: float = 1.0
 
 
 func setup(scen: Dictionary) -> void:
@@ -42,6 +47,7 @@ func setup(scen: Dictionary) -> void:
 	collapse_ratio = float(vic.get("enemy_strength_collapse", 0.28))
 	time_limit = float(vic.get("time_limit_seconds", 900))
 	_rng.randomize()
+	_clear_armies()
 	_egypt_root = Node3D.new()
 	_egypt_root.name = "Egypt"
 	add_child(_egypt_root)
@@ -51,8 +57,34 @@ func setup(scen: Dictionary) -> void:
 	_spawn_side("egypt", scen.get("egypt", {}))
 	_spawn_side("canaan", scen.get("canaan", {}))
 	_start_canaan_str = maxf(total_strength("canaan"), 1.0)
+	_start_egypt_str = maxf(total_strength("egypt"), 1.0)
+	game_over = false
+	winner = ""
+	hold_megiddo_time = 0.0
+	elapsed = 0.0
+	selected.clear()
 	emit_signal("battle_log", "The army of Pharaoh emerges from Aruna onto the plain of Megiddo.")
 	_emit_strength()
+
+
+func _clear_armies() -> void:
+	for u in units:
+		if is_instance_valid(u):
+			u.queue_free()
+	units.clear()
+	selected.clear()
+	if _egypt_root and is_instance_valid(_egypt_root):
+		_egypt_root.queue_free()
+	if _canaan_root and is_instance_valid(_canaan_root):
+		_canaan_root.queue_free()
+	_egypt_root = null
+	_canaan_root = null
+
+
+func restart_battle() -> void:
+	setup(scenario)
+	if control_mode == "selfplay" and learning_ai:
+		learning_ai.begin_selfplay()
 
 
 func _spawn_side(side: String, data: Dictionary) -> void:
@@ -197,13 +229,17 @@ func _formation_offset(i: int, n: int) -> Vector3:
 func _process(delta: float) -> void:
 	if paused or game_over:
 		return
-	elapsed += delta
-	_ai_timer -= delta
+	var d: float = delta * time_scale
+	elapsed += d
+	_ai_timer -= d
 	if _ai_timer <= 0.0:
-		_ai_timer = 1.1
-		_run_canaan_ai()
-	_auto_acquire_targets(delta)
-	_check_victory(delta)
+		_ai_timer = 0.85 if control_mode == "selfplay" else 1.1
+		if control_mode == "selfplay" and learning_ai:
+			learning_ai.think_both(self)
+		else:
+			_run_canaan_ai()
+	_auto_acquire_targets(d)
+	_check_victory(d)
 
 
 func _auto_acquire_targets(_delta: float) -> void:

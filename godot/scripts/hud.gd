@@ -9,6 +9,10 @@ signal cmd_select_all
 signal cmd_pause
 signal cmd_resume
 signal start_pressed
+signal selfplay_toggled
+signal brain_apply(text: String)
+signal brain_reset
+signal new_battle
 
 var title_label: Label
 var brief_label: Label
@@ -21,6 +25,11 @@ var victory_panel: PanelContainer
 var victory_label: Label
 var briefing_panel: PanelContainer
 var btn_pause: Button
+var btn_selfplay: Button
+var brain_panel: PanelContainer
+var brain_edit: TextEdit
+var ai_status_label: Label
+var btn_new_battle: Button
 
 var _log_lines: PackedStringArray = PackedStringArray()
 
@@ -140,6 +149,9 @@ func _build() -> void:
 	_add_cmd(row, "■ STOP", func(): cmd_stop.emit())
 	_add_cmd(row, "◎ ALL", func(): cmd_select_all.emit())
 	btn_pause = _add_cmd(row, "❚❚ PAUSE", func(): cmd_pause.emit())
+	btn_selfplay = _add_cmd(row, "▶ SELF-PLAY", func(): selfplay_toggled.emit())
+	_add_cmd(row, "🧠 BRAIN", func(): _toggle_brain())
+	btn_new_battle = _add_cmd(row, "↺ NEW", func(): new_battle.emit())
 
 	# log
 	var log_panel := PanelContainer.new()
@@ -256,12 +268,123 @@ func _build() -> void:
 	vm.add_theme_constant_override("margin_top", 16)
 	vm.add_theme_constant_override("margin_bottom", 16)
 	vcard.add_child(vm)
+	var vv := VBoxContainer.new()
+	vm.add_child(vv)
 	victory_label = Label.new()
 	victory_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	victory_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	victory_label.add_theme_font_size_override("font_size", 20)
 	victory_label.add_theme_color_override("font_color", Color(0.25, 0.12, 0.05))
-	vm.add_child(victory_label)
+	vv.add_child(victory_label)
+	var vbtn := Button.new()
+	vbtn.text = "NEW BATTLE / CONTINUE"
+	vbtn.pressed.connect(func():
+		victory_panel.visible = false
+		new_battle.emit()
+	)
+	vv.add_child(vbtn)
+
+	# AI status strip
+	ai_status_label = Label.new()
+	ai_status_label.anchor_left = 1.0
+	ai_status_label.anchor_right = 1.0
+	ai_status_label.offset_left = -420
+	ai_status_label.offset_right = -16
+	ai_status_label.offset_top = 145
+	ai_status_label.offset_bottom = 200
+	ai_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	ai_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ai_status_label.add_theme_font_size_override("font_size", 12)
+	ai_status_label.add_theme_color_override("font_color", Color(0.85, 0.9, 0.75))
+	ai_status_label.text = "AI brain: idle"
+	add_child(ai_status_label)
+
+	# Brain paste panel
+	brain_panel = PanelContainer.new()
+	brain_panel.visible = false
+	brain_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	brain_panel.offset_left = 40
+	brain_panel.offset_right = -40
+	brain_panel.offset_top = 40
+	brain_panel.offset_bottom = -40
+	brain_panel.z_index = 40
+	add_child(brain_panel)
+	var bps := StyleBoxFlat.new()
+	bps.bg_color = Color(0.08, 0.1, 0.12, 0.95)
+	bps.border_color = Color(0.85, 0.7, 0.25)
+	bps.set_border_width_all(2)
+	brain_panel.add_theme_stylebox_override("panel", bps)
+	var bpm := MarginContainer.new()
+	bpm.add_theme_constant_override("margin_left", 14)
+	bpm.add_theme_constant_override("margin_right", 14)
+	bpm.add_theme_constant_override("margin_top", 12)
+	bpm.add_theme_constant_override("margin_bottom", 12)
+	brain_panel.add_child(bpm)
+	var bpv := VBoxContainer.new()
+	bpv.add_theme_constant_override("separation", 8)
+	bpm.add_child(bpv)
+	var bpt := Label.new()
+	bpt.text = "AI BRAIN — persist without files (web) or load from disk when available"
+	bpt.add_theme_font_size_override("font_size", 16)
+	bpt.add_theme_color_override("font_color", Color(0.95, 0.88, 0.55))
+	bpv.add_child(bpt)
+	var bph := Label.new()
+	bph.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	bph.text = "1) After self-play wars, this box updates with the brain JSON.\n2) Click SELECT ALL then Ctrl+A / Ctrl+C (or Cmd+C) and paste into a note.\n3) Later: paste text here → APPLY PASTED BRAIN.\nDesktop also writes user:// and res://data when possible."
+	bph.add_theme_font_size_override("font_size", 13)
+	bph.add_theme_color_override("font_color", Color(0.85, 0.85, 0.8))
+	bpv.add_child(bph)
+	brain_edit = TextEdit.new()
+	brain_edit.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	brain_edit.custom_minimum_size = Vector2(0, 320)
+	brain_edit.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	brain_edit.add_theme_font_size_override("font_size", 12)
+	brain_edit.add_theme_color_override("font_color", Color(0.9, 0.95, 0.85))
+	brain_edit.add_theme_color_override("background_color", Color(0.12, 0.14, 0.12))
+	bpv.add_child(brain_edit)
+	var brow := HBoxContainer.new()
+	brow.add_theme_constant_override("separation", 8)
+	bpv.add_child(brow)
+	_add_cmd(brow, "SELECT ALL", func(): _select_all_brain())
+	_add_cmd(brow, "COPY", func(): _copy_brain())
+	_add_cmd(brow, "APPLY PASTED BRAIN", func(): brain_apply.emit(brain_edit.text))
+	_add_cmd(brow, "RESET BRAIN", func(): brain_reset.emit())
+	_add_cmd(brow, "CLOSE", func(): brain_panel.visible = false)
+
+
+func _toggle_brain() -> void:
+	brain_panel.visible = not brain_panel.visible
+	if brain_panel.visible:
+		_select_all_brain()
+
+
+func _select_all_brain() -> void:
+	if brain_edit == null:
+		return
+	brain_edit.grab_focus()
+	brain_edit.select_all()
+
+
+func _copy_brain() -> void:
+	if brain_edit == null:
+		return
+	DisplayServer.clipboard_set(brain_edit.text)
+	push_log("Brain copied to clipboard (if browser allows).")
+
+
+func set_brain_text(text: String) -> void:
+	if brain_edit:
+		brain_edit.text = text
+
+
+func set_ai_status(text: String) -> void:
+	if ai_status_label:
+		ai_status_label.text = text
+
+
+func set_selfplay_ui(active: bool) -> void:
+	if btn_selfplay:
+		btn_selfplay.text = "■ STOP AI" if active else "▶ SELF-PLAY"
 
 
 func _add_cmd(row: HBoxContainer, text: String, cb: Callable) -> Button:
